@@ -1,0 +1,19 @@
+# .coderabbit.yaml — CodeRabbit AI Review Configuration
+# Docs: https://docs.coderabbit.ai/configuration
+
+language: 'en'
+
+reviews:
+  auto_review:
+    enabled: true
+    base_branches:
+      - main
+
+  profile: 'assertive'
+
+  path_filters:
+    - '!node_modules/**'
+    - '!.env'
+    - '!package-lock.json'
+    - '!_test_*.js'
+    - '!_debug_*.js'

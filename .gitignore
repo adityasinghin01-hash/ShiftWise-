@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+
+# Environment variables (NEVER commit real secrets)
+# INFO-01 FIX: Cover all common .env variants, not just .env
+.env
+.env.local
+.env.*.local
+.env.test
+.env.production
+
+# Build output
+frontend/dist/
+dist/
+build/
+
+# Test scripts (local only)
+_test_*.js
+_debug_*.js
+
+# Test coverage
+coverage/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local one-off scripts (seeds, migrations run interactively — not CI)
+scripts/*.local.js
+
+# Local AI session log — kept local so reusable-backend consumers don't
+# inherit project-specific session narration.
+history

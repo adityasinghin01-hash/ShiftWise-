@@ -1,0 +1,15 @@
+# render.yaml
+# Infrastructure-as-Code for Render deployment.
+# Per ARCHITECTURE_MAP and TECH_DECISIONS §4.
+
+services:
+  - type: web
+    name: auth-backend
+    env: node
+    # Install root deps, then build the Vite SPA, so Express can serve it
+    buildCommand: npm install && cd frontend && npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
