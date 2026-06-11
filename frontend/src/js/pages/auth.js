@@ -16,12 +16,12 @@ const getApp = () => document.getElementById('app');
 
 /* ── LOGO SVG snippet ── */
 const logoSVG = `
-  <svg width="36" height="36" viewBox="0 0 48 48" fill="none">
-    <rect width="48" height="48" rx="12" fill="url(#ag)"/>
-    <path d="M16 24L22 30L32 18" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-    <defs><linearGradient id="ag" x1="0" y1="0" x2="48" y2="48">
-      <stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#06b6d4"/>
-    </linearGradient></defs>
+  <svg width="32" height="32" viewBox="0 0 48 48" fill="none">
+    <rect width="48" height="48" rx="24" fill="rgba(45,110,31,0.2)" stroke="rgba(78,168,100,0.5)" stroke-width="1.5"/>
+    <circle cx="24" cy="24" r="10" stroke="#4ea864" stroke-width="1.5" fill="none"/>
+    <line x1="24" y1="24" x2="24" y2="16" stroke="#4ea864" stroke-width="2" stroke-linecap="round"/>
+    <line x1="24" y1="24" x2="30" y2="27" stroke="#4ea864" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="1.5" fill="#4ea864"/>
   </svg>
 `;
 
@@ -138,7 +138,7 @@ function showMfaChallenge(mfaToken) {
     <div class="auth-blob b1"></div>
     <div class="auth-blob b2"></div>
     <div class="auth-card">
-      <div class="auth-logo">${logoSVG}<span>Spinx</span></div>
+      <div class="auth-logo">${logoSVG}<span>ShiftWise</span></div>
       <h1 class="auth-title">Two-Factor Authentication</h1>
       <p class="auth-subtitle">Enter the 6-digit code from your authenticator app</p>
       <form id="mfa-form" novalidate>
@@ -188,7 +188,7 @@ function renderLogin() {
     <div class="auth-blob b1"></div>
     <div class="auth-blob b2"></div>
     <div class="auth-card">
-      <div class="auth-logo">${logoSVG}<span>Spinx</span></div>
+      <div class="auth-logo">${logoSVG}<span>ShiftWise</span></div>
       <h1 class="auth-title">Welcome back</h1>
       <p class="auth-subtitle">Sign in to your account to continue</p>
 
@@ -343,7 +343,7 @@ function renderSignup() {
     <div class="auth-blob b1"></div>
     <div class="auth-blob b2"></div>
     <div class="auth-card">
-      <div class="auth-logo">${logoSVG}<span>Spinx</span></div>
+      <div class="auth-logo">${logoSVG}<span>ShiftWise</span></div>
       <h1 class="auth-title">Create account</h1>
       <p class="auth-subtitle">Start with a free plan. No credit card needed.</p>
 
@@ -467,7 +467,7 @@ function renderForgot() {
       <div class="auth-blob b1"></div>
       <div class="auth-blob b2"></div>
       <div class="auth-card">
-        <div class="auth-logo">${logoSVG}<span>Spinx</span></div>
+        <div class="auth-logo">${logoSVG}<span>ShiftWise</span></div>
         <h1 class="auth-title">Reset password</h1>
         <p class="auth-subtitle">Enter your email and we'll send an OTP</p>
         <form id="forgot-form">
@@ -508,7 +508,7 @@ function renderForgot() {
     <div class="auth-wrap">
       <div class="auth-blob b1"></div>
       <div class="auth-card">
-        <div class="auth-logo">${logoSVG}<span>Spinx</span></div>
+        <div class="auth-logo">${logoSVG}<span>ShiftWise</span></div>
         <h1 class="auth-title">Enter OTP</h1>
         <p class="auth-subtitle">We sent a 6-digit code to <strong>${savedEmail}</strong></p>
         <form id="otp-form">
@@ -550,7 +550,7 @@ function renderForgot() {
     <div class="auth-wrap">
       <div class="auth-blob b1"></div>
       <div class="auth-card">
-        <div class="auth-logo">${logoSVG}<span>Spinx</span></div>
+        <div class="auth-logo">${logoSVG}<span>ShiftWise</span></div>
         <h1 class="auth-title">New password</h1>
         <p class="auth-subtitle">Choose a strong new password for <strong id="reset-email-display"></strong></p>
         <form id="reset-form" novalidate>
@@ -685,7 +685,7 @@ function renderResetFromLink() {
     <div class="auth-blob b1"></div>
     <div class="auth-blob b2"></div>
     <div class="auth-card">
-      <div class="auth-logo">${logoSVG}<span>Spinx</span></div>
+      <div class="auth-logo">${logoSVG}<span>ShiftWise</span></div>
       <h1 class="auth-title">Set new password</h1>
       <p class="auth-subtitle">Choose a strong new password for your account</p>
       <form id="reset-link-form" novalidate>
