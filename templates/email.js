@@ -1,111 +1,248 @@
-// templates/email.js
-// M9 FIX: Externalized email HTML templates.
-// Replaces inline HTML strings scattered across emailService.js and
-// verificationController.js with a single named-template registry.
-// Templates are plain functions — no dependencies, no file system reads.
-
 'use strict';
 
-// Shared base wrapper (minimal inline CSS, kept tight for email clients)
-const base = (body) => `<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;background:#fff}
-.w{max-width:600px;margin:0 auto;padding:40px 20px}
-h2{color:#111;font-size:22px;margin-bottom:8px}
-p{color:#444;font-size:15px;line-height:1.6;margin-bottom:16px}
-.btn{display:inline-block;background:#111;color:#fff;padding:14px 32px;text-decoration:none;border-radius:4px;font-size:15px;font-weight:600}
-.code{display:inline-block;background:#f4f4f5;padding:16px 40px;border-radius:8px;font-size:32px;font-weight:700;letter-spacing:8px;color:#111}
-hr{border:none;border-top:1px solid #eee;margin:32px 0}
-.muted{color:#999;font-size:12px}
-</style></head>
-<body><div class="w">${body}</div></body>
+// ── Shared design tokens ──────────────────────────────
+const BRAND = {
+  primary:   '#2d6e1f',
+  green:     '#4ea864',
+  greenLight:'#7ec8a0',
+  bg:        '#08080f',
+  surface:   '#0d0d18',
+  card:      '#111120',
+  text:      '#f0e4c8',
+  textMuted: '#8a7e68',
+  border:    'rgba(78,168,100,0.18)',
+  name:      'ShiftWise',
+  tagline:   'Smart Team Scheduling',
+};
+
+// ── Clock logo SVG ────────────────────────────────────
+const logo = `
+<table cellpadding="0" cellspacing="0" style="margin:0 auto 32px">
+  <tr>
+    <td style="vertical-align:middle;padding-right:12px">
+      <div style="width:42px;height:42px;border-radius:50%;border:1.5px solid ${BRAND.green};background:rgba(45,110,31,0.12);display:flex;align-items:center;justify-content:center;text-align:center;line-height:42px;font-size:20px">🕐</div>
+    </td>
+    <td style="vertical-align:middle">
+      <span style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:${BRAND.text};letter-spacing:0.04em">${BRAND.name}</span>
+    </td>
+  </tr>
+</table>`;
+
+// ── Base wrapper ──────────────────────────────────────
+const base = ({ title, preview, body, footer }) => `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <meta name="x-apple-disable-message-reformatting" />
+  <title>${title}</title>
+  <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
+</head>
+<body style="margin:0;padding:0;background-color:${BRAND.bg};font-family:'Inter',Arial,sans-serif;-webkit-font-smoothing:antialiased">
+
+  <!-- Preview text (hidden, shows in inbox) -->
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all">${preview}&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;</div>
+
+  <!-- Outer wrapper -->
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:${BRAND.bg};min-height:100vh">
+    <tr>
+      <td align="center" style="padding:48px 16px">
+
+        <!-- Card -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:${BRAND.card};border-radius:16px;border:1px solid ${BRAND.border};overflow:hidden">
+
+          <!-- Top accent bar -->
+          <tr>
+            <td style="height:3px;background:linear-gradient(90deg,${BRAND.primary},${BRAND.green},${BRAND.greenLight})"></td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:48px 48px 40px">
+              ${logo}
+              ${body}
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding:0 48px"><div style="height:1px;background:${BRAND.border}"></div></td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:24px 48px 32px;text-align:center">
+              <p style="margin:0 0 8px;font-size:12px;color:${BRAND.textMuted};line-height:1.6">${footer || 'You received this email because you have an account with ' + BRAND.name + '.'}</p>
+              <p style="margin:0;font-size:12px;color:${BRAND.textMuted}">
+                <span style="color:${BRAND.greenLight}">${BRAND.name}</span> &nbsp;·&nbsp; ${BRAND.tagline}
+              </p>
+            </td>
+          </tr>
+
+        </table>
+        <!-- End card -->
+
+      </td>
+    </tr>
+  </table>
+
+</body>
 </html>`;
 
+// ── Shared CTA button ─────────────────────────────────
+const ctaBtn = (text, url) =>
+  `<table cellpadding="0" cellspacing="0" style="margin:32px auto">
+    <tr>
+      <td style="border-radius:8px;background:linear-gradient(135deg,${BRAND.primary},${BRAND.green});box-shadow:0 4px 20px rgba(45,110,31,0.35)">
+        <a href="${url}" target="_blank" style="display:inline-block;padding:16px 40px;font-family:'Inter',Arial,sans-serif;font-size:15px;font-weight:600;color:#f0e4c8;text-decoration:none;letter-spacing:0.04em;white-space:nowrap">${text}</a>
+      </td>
+    </tr>
+  </table>`;
+
+// ── Shared heading ────────────────────────────────────
+const heading = (text) =>
+  `<h1 style="margin:0 0 12px;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:700;color:${BRAND.text};line-height:1.2;letter-spacing:-0.01em">${text}</h1>`;
+
+// ── Shared paragraph ──────────────────────────────────
+const para = (text) =>
+  `<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#b8a98a">${text}</p>`;
+
+// ── OTP code display ──────────────────────────────────
+const otpBox = (code) =>
+  `<table cellpadding="0" cellspacing="0" style="margin:28px auto">
+    <tr>
+      <td style="background:rgba(45,110,31,0.1);border:1px solid rgba(78,168,100,0.3);border-radius:12px;padding:20px 48px;text-align:center">
+        <span style="font-family:'Courier New',monospace;font-size:38px;font-weight:700;color:${BRAND.greenLight};letter-spacing:10px">${code}</span>
+        <p style="margin:8px 0 0;font-size:12px;color:${BRAND.textMuted}">Expires in 15 minutes</p>
+      </td>
+    </tr>
+  </table>`;
+
+// ── Small info note ───────────────────────────────────
+const note = (text) =>
+  `<p style="margin:20px 0 0;font-size:12px;line-height:1.6;color:${BRAND.textMuted};padding:14px 18px;background:rgba(255,255,255,0.03);border-left:2px solid rgba(78,168,100,0.3);border-radius:0 6px 6px 0">${text}</p>`;
+
+// ── Templates ─────────────────────────────────────────
 const templates = {
-  /** Email verification link */
+
   verificationEmail: ({ verificationUrl }) =>
-    base(`
-      <h2>Verify Your Email</h2>
-      <p>Click the button below to activate your account. This link expires in <strong>24 hours</strong>.</p>
-      <div style="text-align:center;margin:32px 0">
-        <a href="${verificationUrl}" class="btn">Verify Email</a>
-      </div>
-      <hr><p class="muted">If you did not create this account, ignore this email.</p>
-    `),
+    base({
+      title: 'Verify your email — ShiftWise',
+      preview: 'You\'re one step away. Verify your email to activate your ShiftWise account.',
+      body: `
+        ${heading('Confirm your email address')}
+        ${para('Welcome to ShiftWise. To activate your account and start building smarter schedules, please verify your email address.')}
+        ${para('This link is valid for <strong style="color:${BRAND.text}">24 hours</strong>.')}
+        ${ctaBtn('Verify Email Address', verificationUrl)}
+        ${note('If you did not create a ShiftWise account, you can safely ignore this email. No action is required.')}
+      `,
+      footer: 'This verification email was sent to confirm your ShiftWise account.',
+    }),
 
-  /** Password reset link (web flow) */
   passwordResetEmail: ({ resetUrl }) =>
-    base(`
-      <h2>Reset Your Password</h2>
-      <p>We received a password reset request. This link expires in <strong>15 minutes</strong>.</p>
-      <div style="text-align:center;margin:32px 0">
-        <a href="${resetUrl}" class="btn">Reset Password</a>
-      </div>
-      <hr><p class="muted">If you did not request this, ignore this email.</p>
-    `),
+    base({
+      title: 'Reset your password — ShiftWise',
+      preview: 'We received a request to reset your ShiftWise password.',
+      body: `
+        ${heading('Reset your password')}
+        ${para('We received a request to reset the password for your ShiftWise account. Click the button below to choose a new password.')}
+        ${para('This link expires in <strong style="color:${BRAND.text}">15 minutes</strong> for your security.')}
+        ${ctaBtn('Reset Password', resetUrl)}
+        ${note('If you did not request a password reset, please ignore this email. Your password will remain unchanged and your account is secure.')}
+      `,
+      footer: 'You received this because a password reset was requested for your ShiftWise account.',
+    }),
 
-  /** 6-digit OTP code */
   otpEmail: ({ otp }) =>
-    base(`
-      <h2>Password Reset Code</h2>
-      <p>Use the code below to reset your password. It expires in <strong>15 minutes</strong>.</p>
-      <div style="text-align:center;margin:32px 0">
-        <span class="code">${otp}</span>
-      </div>
-      <hr><p class="muted">If you did not request this code, ignore this email.</p>
-    `),
+    base({
+      title: 'Your reset code — ShiftWise',
+      preview: `Your ShiftWise verification code is ${otp}`,
+      body: `
+        ${heading('Your verification code')}
+        ${para('Use the code below to reset your ShiftWise password. Enter it in the app within the next 15 minutes.')}
+        ${otpBox(otp)}
+        ${note('If you did not request this code, please ignore this email. Your account has not been changed.')}
+      `,
+      footer: 'This code was requested for your ShiftWise account.',
+    }),
 
-  /** Email verified — web source (auto-closing tab) */
   emailVerifiedWeb: () => `<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a0f;color:#f1f5f9;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh}.card{background:rgba(255,255,255,.05);border:1px solid rgba(6,182,212,.3);border-radius:24px;padding:48px 32px;text-align:center;max-width:440px;width:90%}h1{font-size:28px;font-weight:800;margin-bottom:12px}p{color:#475569;line-height:1.6}.icon{font-size:64px;margin-bottom:20px}#closing{color:#06b6d4;font-size:13px;margin-top:16px}</style>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Email Verified — ShiftWise</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#08080f; color:#f0e4c8; font-family:'Inter',Arial,sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh; }
+    .card { background:#111120; border:1px solid rgba(78,168,100,0.2); border-radius:20px; padding:56px 40px; text-align:center; max-width:440px; width:90%; }
+    .icon { font-size:56px; margin-bottom:20px; }
+    h1 { font-family:Georgia,serif; font-size:26px; font-weight:700; margin-bottom:10px; }
+    p { font-size:15px; line-height:1.7; color:#8a7e68; margin-bottom:0; }
+    .badge { display:inline-block; margin-bottom:28px; padding:6px 18px; background:rgba(45,110,31,0.15); border:1px solid rgba(78,168,100,0.3); border-radius:999px; font-size:12px; color:#7ec8a0; letter-spacing:0.08em; text-transform:uppercase; }
+    #msg { margin-top:16px; font-size:13px; color:#4ea864; }
+  </style>
 </head>
-<body><div class="card"><div class="icon">✅</div><h1>Email Verified!</h1>
-<p id="msg">Closing this tab and returning you to the app...</p></div>
-<script>setTimeout(function(){window.close();setTimeout(function(){document.getElementById("msg").textContent="Your account is verified! You can close this tab."},500)},1200)</script>
-</body></html>`,
+<body>
+  <div class="card">
+    <div class="icon">✅</div>
+    <div class="badge">ShiftWise</div>
+    <h1>Email Verified</h1>
+    <p>Your account is now active. You can close this tab and sign in to ShiftWise.</p>
+    <p id="msg">Closing this tab automatically...</p>
+  </div>
+  <script>setTimeout(function(){window.close();setTimeout(function(){document.getElementById('msg').textContent='You can close this tab.'},500)},1400)</script>
+</body>
+</html>`,
 
-  /** Email verified — app source (deep-link button) */
   emailVerifiedApp: () => `<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a0f;color:#f1f5f9;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh}.card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:48px 32px;text-align:center;max-width:440px;width:90%}h1{font-size:28px;font-weight:800;margin-bottom:12px}p{color:#475569;margin-bottom:28px;line-height:1.6}a{display:inline-block;padding:14px 32px;border-radius:999px;background:linear-gradient(135deg,#7c3aed,#06b6d4);color:#fff;font-weight:700;text-decoration:none;font-size:15px}.icon{font-size:64px;margin-bottom:20px}</style>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Email Verified — ShiftWise</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#08080f; color:#f0e4c8; font-family:'Inter',Arial,sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh; }
+    .card { background:#111120; border:1px solid rgba(78,168,100,0.2); border-radius:20px; padding:56px 40px; text-align:center; max-width:440px; width:90%; }
+    .icon { font-size:56px; margin-bottom:20px; }
+    h1 { font-family:Georgia,serif; font-size:26px; font-weight:700; margin-bottom:10px; }
+    p { font-size:15px; line-height:1.7; color:#8a7e68; margin-bottom:28px; }
+    .btn { display:inline-block; padding:15px 36px; border-radius:8px; background:linear-gradient(135deg,#2d6e1f,#4ea864); color:#f0e4c8; font-weight:600; font-size:15px; text-decoration:none; letter-spacing:0.03em; }
+  </style>
 </head>
-<body><div class="card"><div class="icon">✅</div><h1>Email Verified!</h1>
-<p>Your account is ready. Return to the app to continue.</p>
-<a href="myapp://dashboard">Open App</a></div></body></html>`,
+<body>
+  <div class="card">
+    <div class="icon">✅</div>
+    <h1>Email Verified</h1>
+    <p>Your ShiftWise account is ready. Return to the app to sign in and start scheduling.</p>
+    <a href="shiftwise://dashboard" class="btn">Open ShiftWise</a>
+  </div>
+</body>
+</html>`,
 
-  /** Reset password page — valid token */
-  resetPasswordPage: ({ token }) => `<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Reset Password</title>
-<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;display:flex;align-items:center;justify-content:center}.card{background:white;border-radius:20px;padding:50px 40px;text-align:center;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.2)}.icon{font-size:64px;margin-bottom:20px}h1{color:#333;font-size:26px;margin-bottom:12px}p{color:#666;font-size:15px;line-height:1.6;margin-bottom:30px}.btn{background:linear-gradient(135deg,#667eea,#764ba2);color:white;text-decoration:none;padding:16px 40px;border-radius:10px;font-size:16px;font-weight:600;display:inline-block}</style>
-</head>
-<body><div class="card"><div class="icon">🔑</div><h1>Reset Your Password</h1>
-<p>Your reset link is valid. Tap the button below to open the app and set your new password.</p>
-<a href="myapp://reset-password?token=${token}" class="btn">Reset Password →</a></div></body></html>`,
-
-  /** Reset password page — expired / invalid token */
-  resetPasswordExpired: () => `<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Link Expired</title>
-<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;background:linear-gradient(135deg,#f093fb,#f5576c);min-height:100vh;display:flex;align-items:center;justify-content:center}.card{background:white;border-radius:20px;padding:50px 40px;text-align:center;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.2)}.icon{font-size:64px;margin-bottom:20px}h1{color:#333;font-size:26px;margin-bottom:12px}p{color:#666;font-size:15px;line-height:1.6;margin-bottom:30px}.btn{background:linear-gradient(135deg,#f093fb,#f5576c);color:white;text-decoration:none;padding:16px 40px;border-radius:10px;font-size:16px;font-weight:600;display:inline-block}</style>
-</head>
-<body><div class="card"><div class="icon">❌</div><h1>Link Expired</h1>
-<p>This password reset link is invalid or has expired. Please request a new one from the app.</p>
-<a href="myapp://forgot-password" class="btn">Back to App →</a></div></body></html>`,
-
-  /** Email verification page — expired / invalid token */
   verificationExpired: () => `<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Verification Failed</title>
-<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;background:linear-gradient(135deg,#f093fb,#f5576c);min-height:100vh;display:flex;align-items:center;justify-content:center}.card{background:white;border-radius:20px;padding:50px 40px;text-align:center;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.2)}.icon{font-size:64px;margin-bottom:20px}h1{color:#333;font-size:26px;margin-bottom:12px}p{color:#666;font-size:15px;line-height:1.6;margin-bottom:30px}.btn{background:linear-gradient(135deg,#f093fb,#f5576c);color:white;text-decoration:none;padding:16px 40px;border-radius:10px;font-size:16px;font-weight:600;display:inline-block}</style>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Link Expired — ShiftWise</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#08080f; color:#f0e4c8; font-family:'Inter',Arial,sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh; }
+    .card { background:#111120; border:1px solid rgba(239,68,68,0.2); border-radius:20px; padding:56px 40px; text-align:center; max-width:440px; width:90%; }
+    .icon { font-size:56px; margin-bottom:20px; }
+    h1 { font-family:Georgia,serif; font-size:26px; font-weight:700; margin-bottom:10px; }
+    p { font-size:15px; line-height:1.7; color:#8a7e68; margin-bottom:28px; }
+    .btn { display:inline-block; padding:15px 36px; border-radius:8px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; font-weight:600; font-size:15px; text-decoration:none; }
+  </style>
 </head>
-<body><div class="card"><div class="icon">❌</div><h1>Link Expired</h1>
-<p>This link has expired or is invalid. Please request a new one from the app.</p>
-<a href="myapp://verification-pending" class="btn">Back to App →</a></div></body></html>`,
+<body>
+  <div class="card">
+    <div class="icon">⏰</div>
+    <h1>Link Expired</h1>
+    <p>This link has expired or is no longer valid. Please return to ShiftWise and request a new one.</p>
+    <a href="shiftwise://resend-verification" class="btn">Request New Link</a>
+  </div>
+</body>
+</html>`,
 };
 
 module.exports = templates;
